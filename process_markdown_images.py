@@ -3,6 +3,7 @@ import os
 import shutil
 
 markdown_files = [
+    "00_系统架构设计师第二版.md",
     "01_计算机硬件.md",
     "02_操作系统知识.md",
     "03_数据库系统.md",
@@ -39,7 +40,13 @@ for md_file in markdown_files:
             target_image_dir = os.path.join("images", base_name)
 
             # 确保目标目录存在
-            os.makedirs(target_image_dir, exist_ok=True)
+            try:
+                os.makedirs(target_image_dir, exist_ok=True)
+            except FileExistsError:
+                # 如果路径存在但不是目录（例如是文件），则删除它并重新创建为目录
+                if os.path.exists(target_image_dir) and not os.path.isdir(target_image_dir):
+                    os.remove(target_image_dir)
+                    os.makedirs(target_image_dir, exist_ok=True)
             print(f"  Ensured target directory exists: {target_image_dir}")
 
             # 初始化图片序号
