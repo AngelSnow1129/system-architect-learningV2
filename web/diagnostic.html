@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统诊断 - 系统架构设计师学习平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.2.0/github-markdown.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 系统诊断</h1>
+
+        <div class="info">
+            <strong>📝 说明：</strong> 这个页面会自动检测系统各项功能是否正常。
+        </div>
+
+        <button onclick="runAllTests()">🚀 运行所有测试</button>
+        <button onclick="location.reload()">🔄 重新加载</button>
+        <button onclick="window.location.href='index.html'">🏠 返回主页</button>
+
+        <div class="test-section">
+            <h2>1. 浏览器环境检测</h2>
+            <div id="browser-test" class="test-item">
+                <span>浏览器信息：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. CDN资源加载检测</h2>
+            <div id="marked-test" class="test-item">
+                <span>Marked.js 库：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+            <div id="css-test" class="test-item">
+                <span>GitHub Markdown CSS：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 文件访问测试</h2>
+            <div id="file-test" class="test-item">
+                <span>测试文件加载：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Markdown解析测试</h2>
+            <div id="parse-test" class="test-item">
+                <span>Markdown解析：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+            <div id="parse-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 网络连接测试</h2>
+            <div id="network-test" class="test-item">
+                <span>网络状态：</span>
+                <span class="status loading">检测中...</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 诊断结果</h2>
+            <div id="summary"></div>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            browser: false,
+            marked: false,
+            css: false,
+            file: false,
+            parse: false,
+            network: false
+        };
+
+        // 1. 浏览器环境检测
+        function testBrowser() {
+            const browserDiv = document.getElementById('browser-test');
+            const info = {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                online: navigator.onLine
+            };
+
+            browserDiv.innerHTML = `
+                <div>
+                    <strong>浏览器：</strong> ${navigator.userAgent.match(/(Chrome|Firefox|Safari|Edge|Opera)/)?.[0] || 'Unknown'}
+                    <span class="status success">✓</span>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    平台: ${info.platform}<br>
+                    语言: ${info.language}<br>
+                    在线: ${info.online ? '是' : '否'}
+                </div>
+            `;
+            testResults.browser = true;
+        }
+
+        // 2. Marked.js 检测
+        function testMarked() {
+            const markedDiv = document.getElementById('marked-test');
+            
+            setTimeout(() => {
+                if (typeof marked !== 'undefined') {
+                    markedDiv.innerHTML = `
+                        <span>Marked.js 库：</span>
+                        <span class="status success">✓ 已加载</span>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                            版本: ${marked.version || '未知'}
+                        </div>
+                    `;
+                    testResults.marked = true;
+                } else {
+                    markedDiv.innerHTML = `
+                        <span>Marked.js 库：</span>
+                        <span class="status error">✗ 未加载</span>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #721c24;">
+                            CDN可能无法访问，请检查网络连接
+                        </div>
+                    `;
+                    testResults.marked = false;
+                }
+                updateSummary();
+            }, 2000);
+        }
+
+        // 3. CSS 检测
+        function testCSS() {
+            const cssDiv = document.getElementById('css-test');
+            // 简单检测，实际CSS加载较难检测
+            cssDiv.innerHTML = `
+                <span>GitHub Markdown CSS：</span>
+                <span class="status success">✓ 已引入</span>
+            `;
+            testResults.css = true;
+        }
+
+        // 4. 文件访问测试
+        async function testFile() {
+            const fileDiv = document.getElementById('file-test');
+            
+            try {
+                const response = await fetch('../01_计算机硬件.md');
+                if (response.ok) {
+                    const text = await response.text();
+                    fileDiv.innerHTML = `
+                        <span>测试文件加载：</span>
+                        <span class="status success">✓ 成功</span>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #666;">
+                            文件大小: ${(text.length / 1024).toFixed(2)} KB
+                        </div>
+                    `;
+                    testResults.file = true;
+                } else {
+                    throw new Error('HTTP ' + response.status);
+                }
+            } catch (error) {
+                fileDiv.innerHTML = `
+                    <span>测试文件加载：</span>
+                    <span class="status error">✗ 失败</span>
+                    <div style="margin-top: 5px; font-size: 0.9em; color: #721c24;">
+                        错误: ${error.message}
+                    </div>
+                `;
+                testResults.file = false;
+            }
+            updateSummary();
+        }
+
+        // 5. Markdown解析测试
+        function testParse() {
+            const parseDiv = document.getElementById('parse-test');
+            const resultDiv = document.getElementById('parse-result');
+            
+            setTimeout(() => {
+                if (typeof marked === 'undefined') {
+                    parseDiv.innerHTML = `
+                        <span>Markdown解析：</span>
+                        <span class="status error">✗ 无法测试</span>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #721c24;">
+                            Marked.js 未加载
+                        </div>
+                    `;
+                    testResults.parse = false;
+                    updateSummary();
+                    return;
+                }
+
+                try {
+                    const testMarkdown = '# 测试标题\n\n这是一个**测试**段落。\n\n- 列表项1\n- 列表项2';
+                    const html = marked.parse(testMarkdown);
+                    
+                    parseDiv.innerHTML = `
+                        <span>Markdown解析：</span>
+                        <span class="status success">✓ 成功</span>
+                    `;
+                    
+                    resultDiv.innerHTML = `
+                        <div style="margin-top: 10px;">
+                            <strong>测试输入：</strong>
+                            <div class="code">${testMarkdown}</div>
+                            <strong>解析结果：</strong>
+                            <div class="markdown-body" style="padding: 15px; background: white; border-radius: 5px; margin-top: 10px;">
+                                ${html}
+                            </div>
+                        </div>
+                    `;
+                    testResults.parse = true;
+                } catch (error) {
+                    parseDiv.innerHTML = `
+                        <span>Markdown解析：</span>
+                        <span class="status error">✗ 失败</span>
+                        <div style="margin-top: 5px; font-size: 0.9em; color: #721c24;">
+                            错误: ${error.message}
+                        </div>
+                    `;
+                    testResults.parse = false;
+                }
+                updateSummary();
+            }, 2500);
+        }
+
+        // 6. 网络连接测试
+        function testNetwork() {
+            const networkDiv = document.getElementById('network-test');
+            
+            if (navigator.onLine) {
+                networkDiv.innerHTML = `
+                    <span>网络状态：</span>
+                    <span class="status success">✓ 在线</span>
+                `;
+                testResults.network = true;
+            } else {
+                networkDiv.innerHTML = `
+                    <span>网络状态：</span>
+                    <span class="status error">✗ 离线</span>
+                `;
+                testResults.network = false;
+            }
+            updateSummary();
+        }
+
+        // 更新总结
+        function updateSummary() {
+            const summaryDiv = document.getElementById('summary');
+            const total = Object.keys(testResults).length;
+            const passed = Object.values(testResults).filter(v => v).length;
+            const percentage = ((passed / total) * 100).toFixed(0);
+
+            let statusClass = 'success';
+            let statusText = '✓ 所有测试通过';
+            let recommendation = '系统运行正常，可以正常使用学习平台。';
+
+            if (passed < total) {
+                if (passed >= total * 0.7) {
+                    statusClass = 'warning';
+                    statusText = '⚠ 部分测试失败';
+                    recommendation = '系统基本可用，但某些功能可能受限。';
+                } else {
+                    statusClass = 'error';
+                    statusText = '✗ 多项测试失败';
+                    recommendation = '系统存在问题，建议检查网络连接和浏览器设置。';
+                }
+            }
+
+            summaryDiv.innerHTML = `
+                <div class="test-item">
+                    <h3 style="margin-top: 0;">${statusText}</h3>
+                    <div style="margin: 15px 0;">
+                        <strong>通过率：</strong> ${passed}/${total} (${percentage}%)
+                    </div>
+                    <div style="margin: 15px 0;">
+                        <strong>建议：</strong> ${recommendation}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <strong>详细结果：</strong>
+                        <ul style="margin-top: 10px;">
+                            <li>浏览器环境: ${testResults.browser ? '✓' : '✗'}</li>
+                            <li>Marked.js库: ${testResults.marked ? '✓' : '✗'}</li>
+                            <li>CSS样式: ${testResults.css ? '✓' : '✗'}</li>
+                            <li>文件访问: ${testResults.file ? '✓' : '✗'}</li>
+                            <li>Markdown解析: ${testResults.parse ? '✓' : '✗'}</li>
+                            <li>网络连接: ${testResults.network ? '✓' : '✗'}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 运行所有测试
+        function runAllTests() {
+            testBrowser();
+            testMarked();
+            testCSS();
+            testFile();
+            testParse();
+            testNetwork();
+        }
+
+        // 页面加载时自动运行测试
+        window.onload = runAllTests;
+    </script>
+</body>
+</html>

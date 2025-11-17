@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档查看器</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.2.0/github-markdown.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <script src="marked-fallback.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .markdown-body {
+            max-width: 1000px;
+            margin: 0 auto;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        /* Markdown内容美化 */
+        .markdown-body h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-top: 30px;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        .markdown-body h2 {
+            color: #764ba2;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .markdown-body h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+
+        .markdown-body code {
+            background: #f6f8fa;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+
+        .markdown-body pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .markdown-body pre code {
+            background: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .markdown-body table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .markdown-body table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .markdown-body table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .markdown-body a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .markdown-body a:hover {
+            border-bottom-color: #667eea;
+        }
+
+        /* 章节目录 */
+        .toc-container {
+            position: fixed;
+            right: 20px;
+            top: 100px;
+            width: 280px;
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            background: rgba(248, 249, 250, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+
+        /* 确保正文不被遮挡 */
+        .markdown-body {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 1400px) {
+            .markdown-body {
+                max-width: 1000px;
+                margin-right: 320px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .toc-container {
+                display: none;
+            }
+            
+            .markdown-body {
+                max-width: 100%;
+            }
+        }
+
+        .toc-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-item {
+            margin: 8px 0;
+        }
+
+        .toc-link {
+            display: block;
+            color: #666;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .toc-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .toc-link.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .toc-link.level-1 {
+            font-weight: bold;
+        }
+
+        .toc-link.level-2 {
+            padding-left: 20px;
+        }
+
+        .toc-link.level-3 {
+            padding-left: 35px;
+            font-size: 0.85em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #f5576c;
+        }
+
+        @media print {
+            .header {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="doc-title">文档查看器</h1>
+            <a href="index.html" class="back-btn">← 返回首页</a>
+        </div>
+
+        <div class="content">
+            <div class="markdown-body" id="markdown-content">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 等待marked库加载
+        function waitForMarked() {
+            return new Promise((resolve) => {
+                if (typeof marked !== 'undefined') {
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (typeof marked !== 'undefined') {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        // 从URL参数获取文件路径
+        const urlParams = new URLSearchParams(window.location.search);
+        const filePath = urlParams.get('file') || '../keypoint/📌必背内容总索引.md';
+
+        // 加载Markdown文件
+        async function loadMarkdown() {
+            const contentDiv = document.getElementById('markdown-content');
+            const titleDiv = document.getElementById('doc-title');
+
+            try {
+                const response = await fetch(filePath);
+                if (!response.ok) {
+                    throw new Error('文件未找到');
+                }
+
+                const markdown = await response.text();
+                
+                // 显示解析中状态
+                contentDiv.innerHTML = '<div class="loading">解析中...</div>';
+                
+                // 等待marked库加载完成
+                await waitForMarked();
+                
+                // 使用setTimeout避免阻塞UI
+                setTimeout(() => {
+                    try {
+                        // 再次检查marked是否可用
+                        if (typeof marked === 'undefined') {
+                            throw new Error('Markdown解析库未加载，请检查网络连接');
+                        }
+                        
+                        const html = marked.parse(markdown);
+                        contentDiv.innerHTML = html;
+                        
+                        // 修复图片路径
+                        fixImagePaths();
+                        
+                        // 生成目录
+                        generateTOC();
+                    } catch (error) {
+                        contentDiv.innerHTML = `
+                            <div class="error">
+                                <h2>😕 解析失败</h2>
+                                <p>${error.message}</p>
+                                <p style="color: #999; font-size: 0.9em;">提示：请检查网络连接，确保CDN资源可以访问</p>
+                            </div>
+                        `;
+                    }
+                }, 100);
+
+                // 从文件路径提取标题
+                const fileName = filePath.split('/').pop().replace('.md', '');
+                titleDiv.textContent = fileName;
+
+                // 更新页面标题
+                document.title = fileName;
+
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>😕 加载失败</h2>
+                        <p>${error.message}</p>
+                        <p>文件路径: ${filePath}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 修复图片路径
+        function fixImagePaths() {
+            const contentDiv = document.querySelector('.markdown-body');
+            if (!contentDiv) return;
+
+            const images = contentDiv.querySelectorAll('img');
+            images.forEach(img => {
+                const src = img.getAttribute('src');
+                if (src) {
+                    // 修复以 ./images/ 开头的路径
+                    if (src.startsWith('./images/')) {
+                        img.src = '../' + src.substring(2);
+                    }
+                    // 修复以 images/ 开头的路径
+                    else if (src.startsWith('images/')) {
+                        img.src = '../' + src;
+                    }
+                    
+                    // 添加图片加载错误处理
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = 'padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; margin: 20px 0;';
+                        errorMsg.innerHTML = `
+                            <strong>⚠️ 图片加载失败</strong><br>
+                            <span style="color: #666; font-size: 0.9em;">路径: ${src}</span>
+                        `;
+                        this.parentNode.insertBefore(errorMsg, this);
+                    };
+
+                    // 添加图片点击查看大图
+                    img.onload = function() {
+                        this.style.cursor = 'pointer';
+                        this.title = '点击查看大图';
+                        this.onclick = function() {
+                            window.open(this.src, '_blank');
+                        };
+                    };
+                }
+            });
+        }
+
+        // 生成章节目录
+        function generateTOC() {
+            const contentDiv = document.querySelector('.markdown-body');
+            if (!contentDiv) return;
+
+            const headings = contentDiv.querySelectorAll('h1, h2, h3');
+            if (headings.length === 0) return;
+
+            headings.forEach((heading, index) => {
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+            });
+
+            const tocContainer = document.createElement('div');
+            tocContainer.className = 'toc-container';
+
+            const tocTitle = document.createElement('div');
+            tocTitle.className = 'toc-title';
+            tocTitle.textContent = '📑 文档目录';
+
+            const tocList = document.createElement('ul');
+            tocList.className = 'toc-list';
+
+            headings.forEach((heading) => {
+                const level = heading.tagName.toLowerCase();
+                const text = heading.textContent;
+                const id = heading.id;
+
+                const tocItem = document.createElement('li');
+                tocItem.className = 'toc-item';
+
+                const tocLink = document.createElement('a');
+                tocLink.className = `toc-link level-${level.charAt(1)}`;
+                tocLink.href = `#${id}`;
+                tocLink.textContent = text;
+                tocLink.onclick = function(e) {
+                    e.preventDefault();
+                    const target = document.getElementById(id);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        
+                        document.querySelectorAll('.toc-link').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        tocLink.classList.add('active');
+                    }
+                };
+
+                tocItem.appendChild(tocLink);
+                tocList.appendChild(tocItem);
+            });
+
+            tocContainer.appendChild(tocTitle);
+            tocContainer.appendChild(tocList);
+            contentDiv.insertBefore(tocContainer, contentDiv.firstChild);
+        }
+
+        // 页面加载时执行
+        window.onload = loadMarkdown;
+    </script>
+</body>
+</html>

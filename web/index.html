@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统架构设计师学习平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .exam-type {
+            margin-bottom: 40px;
+        }
+
+        .exam-type h2 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .exam-description {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .exam-description h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .exam-description p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            display: block;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .feature-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 系统架构设计师学习平台</h1>
+            <p>专业的软考高级资格考试学习系统</p>
+        </div>
+
+        <div class="content">
+            <div class="exam-type">
+                <h2>📚 系统架构设计师</h2>
+                <div class="exam-description">
+                    <h3>考试简介</h3>
+                    <p>系统架构设计师是软考高级资格考试，主要考查系统架构设计、软件工程、项目管理等综合能力。</p>
+                    <p><strong>考试科目：</strong>综合知识（选择题）、案例分析、论文</p>
+                    <p><strong>考试时间：</strong>每年5月和11月</p>
+                </div>
+
+                <div class="button-group">
+                    <a href="chapters.html?type=architect" class="btn">📖 章节学习</a>
+                    <a href="chapters.html?type=architect&view=keypoint" class="btn">⭐ 重点提纲</a>
+                    <a href="chapters.html?type=architect&view=mustknow" class="btn btn-secondary">🎯 必背内容</a>
+                    <a href="viewer.html?file=../keypoint/📌必背内容总索引.md" class="btn btn-secondary">📌 必背索引</a>
+                </div>
+
+                <h3 style="margin-top: 30px; color: #667eea;">📑 快速访问</h3>
+                <div class="button-group" style="margin-top: 15px;">
+                    <a href="viewer.html?file=../keypoint/常用公式速查表.md" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">📐 公式速查</a>
+                    <a href="viewer.html?file=../keypoint/快速查询索引.md" class="btn" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">🔍 快速查询</a>
+                    <a href="viewer.html?file=../keypoint/学习进度跟踪表.md" class="btn" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">📊 学习进度</a>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>完整知识体系</h3>
+                    <p>18个章节，覆盖所有考试知识点</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>重点提纲</h3>
+                    <p>精心整理的重难点知识提纲</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>必背内容</h3>
+                    <p>核心公式、算法、概念速查</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💡</div>
+                    <h3>实战案例</h3>
+                    <p>丰富的例题和解题技巧</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 系统架构设计师学习平台 | <a href="nav.html" style="color: #667eea; text-decoration: none;">🧭 快速导航</a> | <a href="diagnostic.html" style="color: #667eea; text-decoration: none;">🔧 系统诊断</a> | 祝您考试顺利！</p>
+        </div>
+    </div>
+</body>
+</html>

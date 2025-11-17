@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>章节学习 - 系统架构设计师</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.2.0/github-markdown.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <script src="marked-fallback.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 320px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .back-home {
+            display: block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .back-home:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .view-switcher {
+            display: flex;
+            padding: 15px;
+            gap: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .view-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: white;
+            color: #666;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .search-box {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .chapter-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chapter-item {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .chapter-item:hover {
+            background: #f8f9fa;
+            border-left-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .chapter-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-left-color: #764ba2;
+        }
+
+        .chapter-number {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .chapter-stars {
+            float: right;
+            color: #ffd700;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-title {
+            font-size: 1.8em;
+            color: #333;
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #764ba2;
+        }
+
+        .content-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px;
+            background: white;
+            margin: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        /* 章节目录 */
+        .toc-container {
+            position: fixed;
+            right: 20px;
+            top: 100px;
+            width: 280px;
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            background: rgba(248, 249, 250, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .toc-container.collapsed {
+            transform: translateX(calc(100% + 20px));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 确保正文不被目录遮挡 */
+        .markdown-body {
+            max-width: 900px;
+            margin: 0 auto;
+            padding-right: 0;
+        }
+
+        /* 大屏幕时给正文留出空间 */
+        @media (min-width: 1400px) {
+            .markdown-body {
+                max-width: 1000px;
+                margin-right: 320px;
+            }
+        }
+
+        .toc-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toc-collapse-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 5px;
+            transition: transform 0.3s;
+        }
+
+        .toc-collapse-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .toc-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .toc-item {
+            margin: 8px 0;
+        }
+
+        .toc-link {
+            display: block;
+            color: #666;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .toc-link:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .toc-link.active {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .toc-link.level-1 {
+            font-weight: bold;
+            font-size: 1em;
+        }
+
+        .toc-link.level-2 {
+            padding-left: 20px;
+        }
+
+        .toc-link.level-3 {
+            padding-left: 35px;
+            font-size: 0.85em;
+        }
+
+        .toc-toggle {
+            position: fixed;
+            right: 20px;
+            top: 100px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .toc-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .toc-toggle.hidden {
+            display: none;
+        }
+
+        /* 目录展开时的遮罩 */
+        .toc-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 99;
+            display: none;
+        }
+
+        .toc-overlay.show {
+            display: block;
+        }
+
+        /* 中等屏幕 */
+        @media (max-width: 1400px) {
+            .markdown-body {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+        }
+
+        /* 小屏幕 */
+        @media (max-width: 1200px) {
+            .toc-container {
+                right: -300px;
+                top: 80px;
+                width: 280px;
+                max-height: calc(100vh - 100px);
+                transition: right 0.3s ease, opacity 0.3s ease;
+            }
+
+            .toc-container.show {
+                right: 20px;
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .markdown-body {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+        }
+
+        /* 移动端 */
+        @media (max-width: 768px) {
+            .toc-container {
+                right: -100%;
+                top: 60px;
+                width: calc(100% - 40px);
+                max-width: 350px;
+            }
+
+            .toc-toggle {
+                right: 15px;
+                top: 80px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+
+        .markdown-body {
+            max-width: 1000px;
+            margin: 0 auto;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+        }
+
+        /* Markdown内容美化 */
+        .markdown-body h1 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-top: 30px;
+            margin-bottom: 25px;
+            font-size: 2.2em;
+        }
+
+        .markdown-body h2 {
+            color: #764ba2;
+            border-left: 5px solid #667eea;
+            padding-left: 15px;
+            margin-top: 35px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .markdown-body h3 {
+            color: #555;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+        }
+
+        .markdown-body h4 {
+            color: #666;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+
+        .markdown-body p {
+            margin-bottom: 16px;
+            text-align: justify;
+        }
+
+        .markdown-body code {
+            background: #f6f8fa;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e83e8c;
+        }
+
+        .markdown-body pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .markdown-body pre code {
+            background: transparent;
+            color: #f8f8f2;
+            padding: 0;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin: 20px 0;
+            color: #666;
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-radius: 5px;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .markdown-body table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .markdown-body table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .markdown-body table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .markdown-body ul, .markdown-body ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        .markdown-body li {
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+
+        .markdown-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        }
+
+        .markdown-body hr {
+            border: none;
+            border-top: 2px solid #e0e0e0;
+            margin: 30px 0;
+        }
+
+        .markdown-body a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .markdown-body a:hover {
+            border-bottom-color: #667eea;
+        }
+
+        /* 强调文本 */
+        .markdown-body strong {
+            color: #333;
+            font-weight: 700;
+        }
+
+        .markdown-body em {
+            color: #666;
+            font-style: italic;
+        }
+
+        /* 特殊标记 */
+        .markdown-body mark {
+            background: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        /* 代码块语言标签 */
+        .markdown-body pre[class*="language-"]::before {
+            content: attr(class);
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 5px 10px;
+            background: #667eea;
+            color: white;
+            font-size: 0.8em;
+            border-radius: 0 8px 0 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #f5576c;
+        }
+
+        /* 加载进度条 */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 9999;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -320px;
+                height: 100vh;
+                transition: left 0.3s;
+            }
+
+            .sidebar.show {
+                left: 0;
+            }
+
+            .mobile-toggle {
+                display: block;
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                z-index: 101;
+                background: #667eea;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+        }
+
+        .mobile-toggle {
+            display: none;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        }
+
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* 阅读进度条 */
+        .reading-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+            z-index: 10000;
+            transition: width 0.1s ease;
+        }
+
+        /* 返回顶部按钮 */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .back-to-top.show {
+            display: flex;
+        }
+
+        /* 内容淡入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .markdown-body {
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 代码复制按钮 */
+        .code-block-wrapper {
+            position: relative;
+        }
+
+        .copy-code-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .code-block-wrapper:hover .copy-code-btn {
+            opacity: 1;
+        }
+
+        .copy-code-btn:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar" id="progress-bar" style="display: none;">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+
+    <div class="reading-progress" id="reading-progress"></div>
+
+    <div class="toc-overlay" id="toc-overlay"></div>
+
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰ 目录</button>
+
+    <button class="toc-toggle hidden" id="toc-toggle" onclick="toggleTOC()">📑</button>
+
+    <button class="back-to-top" id="back-to-top" onclick="scrollToTop()">↑</button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>📚 章节导航</h1>
+            <p id="exam-type-name">系统架构设计师</p>
+            <a href="index.html" class="back-home">← 返回首页</a>
+        </div>
+
+        <div class="view-switcher">
+            <button class="view-btn active" data-view="normal" onclick="switchView('normal')">📖 完整章节</button>
+            <button class="view-btn" data-view="keypoint" onclick="switchView('keypoint')">⭐ 重点提纲</button>
+            <button class="view-btn" data-view="mustknow" onclick="switchView('mustknow')">🎯 必背内容</button>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="搜索章节..." onkeyup="searchChapters()">
+        </div>
+
+        <div class="chapter-list" id="chapter-list">
+            <!-- 章节列表将通过JavaScript动态生成 -->
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-header">
+            <h2 class="content-title" id="content-title">请选择章节</h2>
+            <div class="content-actions">
+                <button class="action-btn" onclick="printContent()">🖨️ 打印</button>
+                <button class="action-btn" onclick="downloadMarkdown()">⬇️ 下载</button>
+            </div>
+        </div>
+
+        <div class="content-body">
+            <div class="markdown-body" id="markdown-content">
+                <div class="loading">
+                    <h2>👋 欢迎使用系统架构设计师学习平台</h2>
+                    <p>请从左侧选择要学习的章节</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // 等待marked库加载
+        function waitForMarked() {
+            return new Promise((resolve) => {
+                if (typeof marked !== 'undefined') {
+                    resolve();
+                } else {
+                    const checkInterval = setInterval(() => {
+                        if (typeof marked !== 'undefined') {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
+        // 从配置文件获取章节数据
+        const chapters = {};
+        for (const [key, value] of Object.entries(CONFIG.examTypes)) {
+            chapters[key] = value.chapters;
+        }
+
+        let currentView = 'normal';
+        let currentExamType = 'architect';
+        let currentChapter = null;
+        let currentMarkdown = '';
+
+        // 初始化
+        window.onload = function() {
+            // 从URL参数获取考试类型和视图
+            const urlParams = new URLSearchParams(window.location.search);
+            currentExamType = urlParams.get('type') || 'architect';
+            currentView = urlParams.get('view') || 'normal';
+
+            // 更新视图按钮状态
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === currentView) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 加载章节列表
+            loadChapterList();
+
+            // 如果URL中有章节ID，自动加载
+            const chapterId = urlParams.get('chapter');
+            if (chapterId) {
+                loadChapter(chapterId);
+            }
+        };
+
+        // 加载章节列表
+        function loadChapterList() {
+            const chapterList = document.getElementById('chapter-list');
+            const chapterData = chapters[currentExamType];
+
+            chapterList.innerHTML = '';
+            chapterData.forEach(chapter => {
+                const item = document.createElement('div');
+                item.className = 'chapter-item';
+                item.dataset.id = chapter.id;
+                item.innerHTML = `
+                    <span class="chapter-number">${chapter.id}</span>
+                    ${chapter.name}
+                    <span class="chapter-stars">${'⭐'.repeat(chapter.stars)}</span>
+                `;
+                item.onclick = () => loadChapter(chapter.id);
+                chapterList.appendChild(item);
+            });
+        }
+
+        // 获取文件路径
+        function getFilePath(chapterId, view) {
+            const chapter = chapters[currentExamType].find(c => c.id === chapterId);
+            if (!chapter) return null;
+
+            // 检查是否有特殊映射
+            if (CONFIG.fileMapping[view] && CONFIG.fileMapping[view][chapterId]) {
+                return `../keypoint/${CONFIG.fileMapping[view][chapterId]}`;
+            }
+
+            // 使用配置中的视图类型
+            const viewConfig = CONFIG.viewTypes[view];
+            if (!viewConfig) return null;
+
+            // 构建文件路径（相对于web目录）
+            if (view === 'normal') {
+                return `../${chapterId}_${chapter.name}.md`;
+            } else {
+                // 使用altName（如果存在）或原名称
+                const name = chapter.altName || chapter.name;
+                return `../${viewConfig.folder}/${chapterId}_${name}${viewConfig.suffix}.md`;
+            }
+        }
+
+        // 显示/隐藏进度条
+        function showProgress() {
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-bar-fill');
+            progressBar.style.display = 'block';
+            progressFill.style.width = '30%';
+        }
+
+        function updateProgress(percent) {
+            const progressFill = document.getElementById('progress-bar-fill');
+            progressFill.style.width = percent + '%';
+        }
+
+        function hideProgress() {
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-bar-fill');
+            progressFill.style.width = '100%';
+            setTimeout(() => {
+                progressBar.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 300);
+        }
+
+        // 加载章节内容
+        async function loadChapter(chapterId) {
+            const contentDiv = document.getElementById('markdown-content');
+            const titleDiv = document.getElementById('content-title');
+
+            // 显示进度条
+            showProgress();
+
+            // 更新选中状态
+            document.querySelectorAll('.chapter-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.id === chapterId) {
+                    item.classList.add('active');
+                }
+            });
+
+            // 显示加载状态
+            contentDiv.innerHTML = '<div class="loading">加载中</div>';
+            updateProgress(40);
+
+            const chapter = chapters[currentExamType].find(c => c.id === chapterId);
+            if (!chapter) {
+                contentDiv.innerHTML = '<div class="error">章节未找到</div>';
+                return;
+            }
+
+            // 检查该章节是否有对应视图的内容
+            if (currentView === 'keypoint' && !chapter.hasKeypoint) {
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>📝 暂无重点提纲</h2>
+                        <p>该章节暂未整理重点提纲，请查看完整章节内容</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (currentView === 'mustknow' && !chapter.hasMustKnow) {
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>📝 暂无必背内容</h2>
+                        <p>该章节暂未整理必背内容，请查看完整章节内容</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 构建文件路径
+            const filePath = getFilePath(chapterId, currentView);
+            if (!filePath) {
+                contentDiv.innerHTML = '<div class="error">无法构建文件路径</div>';
+                return;
+            }
+
+            // 尝试加载多个可能的文件（处理必背内容可能有多个文件的情况）
+            const filePaths = [filePath];
+            if (currentView === 'mustknow') {
+                filePaths.push(filePath.replace('.md', '2.md'));
+            }
+
+            let loadedContent = '';
+            let loadedCount = 0;
+
+            for (const path of filePaths) {
+                try {
+                    console.log(`尝试加载: ${path}`);
+                    const response = await fetch(path);
+                    console.log(`响应状态: ${response.status} ${response.statusText}`);
+                    
+                    if (response.ok) {
+                        const markdown = await response.text();
+                        console.log(`成功加载，内容长度: ${markdown.length}`);
+                        loadedContent += (loadedCount > 0 ? '\n\n---\n\n' : '') + markdown;
+                        loadedCount++;
+                    } else {
+                        console.warn(`加载失败: ${path}, 状态: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error(`加载异常: ${path}`, error);
+                }
+            }
+
+            updateProgress(60);
+
+            console.log(`总共加载了 ${loadedCount} 个文件`);
+
+            if (loadedCount === 0) {
+                contentDiv.innerHTML = `
+                    <div class="error">
+                        <h2>😕 加载失败</h2>
+                        <p>文件未找到</p>
+                        <p>尝试的路径: ${filePaths.join(', ')}</p>
+                        <p style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                            <strong>可能的原因：</strong><br>
+                            1. 文件路径不正确<br>
+                            2. 浏览器缓存问题（请按 Ctrl+Shift+R 强制刷新）<br>
+                            3. 网络连接问题<br>
+                            4. 请检查浏览器控制台查看详细错误信息
+                        </p>
+                        <button onclick="location.reload(true)" style="
+                            margin-top: 15px;
+                            padding: 10px 20px;
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            border-radius: 5px;
+                            cursor: pointer;
+                        ">强制刷新页面</button>
+                    </div>
+                `;
+                hideProgress();
+                return;
+            }
+
+            currentMarkdown = loadedContent;
+            currentChapter = chapter;
+
+            // 显示解析中状态
+            contentDiv.innerHTML = '<div class="loading">解析中</div>';
+            updateProgress(70);
+
+            // 等待marked库加载完成
+            await waitForMarked();
+
+            // 使用marked解析Markdown（使用setTimeout避免阻塞UI）
+            setTimeout(() => {
+                try {
+                    updateProgress(90);
+                    
+                    // 再次检查marked是否可用
+                    if (typeof marked === 'undefined') {
+                        throw new Error('Markdown解析库未加载，请检查网络连接');
+                    }
+                    
+                    const html = marked.parse(loadedContent);
+                    contentDiv.innerHTML = html;
+                    titleDiv.textContent = chapter.name + (loadedCount > 1 ? ` (${loadedCount}个文件)` : '');
+                    
+                    // 修复图片路径
+                    fixImagePaths();
+                    
+                    // 增强代码块
+                    enhanceCodeBlocks();
+                    
+                    // 生成章节目录
+                    generateTOC();
+                    
+                    // 重置阅读进度
+                    const contentBody = document.querySelector('.content-body');
+                    if (contentBody) {
+                        contentBody.scrollTop = 0;
+                    }
+                    
+                    hideProgress();
+                } catch (error) {
+                    contentDiv.innerHTML = `
+                        <div class="error">
+                            <h2>😕 解析失败</h2>
+                            <p>${error.message}</p>
+                            <p style="color: #999; font-size: 0.9em;">提示：请检查网络连接，确保CDN资源可以访问</p>
+                        </div>
+                    `;
+                    hideProgress();
+                }
+            }, 100);
+
+            // 更新URL
+            const url = new URL(window.location);
+            url.searchParams.set('chapter', chapterId);
+            window.history.pushState({}, '', url);
+        }
+
+        // 切换视图
+        function switchView(view) {
+            currentView = view;
+
+            // 更新按钮状态
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === view) {
+                    btn.classList.add('active');
+                }
+            });
+
+            // 重新加载章节列表
+            loadChapterList();
+
+            // 如果有当前章节，重新加载
+            if (currentChapter) {
+                loadChapter(currentChapter.id);
+            }
+
+            // 更新URL
+            const url = new URL(window.location);
+            url.searchParams.set('view', view);
+            window.history.pushState({}, '', url);
+        }
+
+        // 搜索章节
+        function searchChapters() {
+            const searchText = document.getElementById('search-input').value.toLowerCase();
+            const items = document.querySelectorAll('.chapter-item');
+
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchText)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // 打印内容
+        function printContent() {
+            window.print();
+        }
+
+        // 下载Markdown
+        function downloadMarkdown() {
+            if (!currentMarkdown || !currentChapter) {
+                alert('请先选择一个章节');
+                return;
+            }
+
+            const blob = new Blob([currentMarkdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentChapter.id}_${currentChapter.name}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 移动端侧边栏切换
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('show');
+        }
+
+        // 阅读进度条
+        function updateReadingProgress() {
+            const contentBody = document.querySelector('.content-body');
+            if (!contentBody) return;
+
+            const scrollTop = contentBody.scrollTop;
+            const scrollHeight = contentBody.scrollHeight - contentBody.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+
+            const progressBar = document.getElementById('reading-progress');
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+
+            // 显示/隐藏返回顶部按钮
+            const backToTop = document.getElementById('back-to-top');
+            if (backToTop) {
+                if (scrollTop > 300) {
+                    backToTop.classList.add('show');
+                } else {
+                    backToTop.classList.remove('show');
+                }
+            }
+        }
+
+        // 返回顶部
+        function scrollToTop() {
+            const contentBody = document.querySelector('.content-body');
+            if (contentBody) {
+                contentBody.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // 监听滚动事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentBody = document.querySelector('.content-body');
+            if (contentBody) {
+                contentBody.addEventListener('scroll', updateReadingProgress);
+            }
+        });
+
+        // 代码块增强
+        function enhanceCodeBlocks() {
+            const codeBlocks = document.querySelectorAll('.markdown-body pre');
+            codeBlocks.forEach(block => {
+                // 添加复制按钮
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-block-wrapper';
+                block.parentNode.insertBefore(wrapper, block);
+                wrapper.appendChild(block);
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-code-btn';
+                copyBtn.textContent = '复制';
+                copyBtn.onclick = function() {
+                    const code = block.textContent;
+                    navigator.clipboard.writeText(code).then(() => {
+                        copyBtn.textContent = '已复制！';
+                        setTimeout(() => {
+                            copyBtn.textContent = '复制';
+                        }, 2000);
+                    });
+                };
+                wrapper.appendChild(copyBtn);
+            });
+        }
+
+        // 生成章节目录
+        function generateTOC() {
+            const contentDiv = document.querySelector('.markdown-body');
+            if (!contentDiv) return;
+
+            // 查找所有标题
+            const headings = contentDiv.querySelectorAll('h1, h2, h3');
+            if (headings.length === 0) return;
+
+            // 为每个标题添加ID
+            headings.forEach((heading, index) => {
+                if (!heading.id) {
+                    heading.id = `heading-${index}`;
+                }
+            });
+
+            // 创建目录容器
+            const tocContainer = document.createElement('div');
+            tocContainer.className = 'toc-container';
+            tocContainer.id = 'toc-container';
+
+            const tocTitle = document.createElement('div');
+            tocTitle.className = 'toc-title';
+            
+            const titleText = document.createElement('span');
+            titleText.textContent = '📑 章节目录';
+            
+            const collapseBtn = document.createElement('button');
+            collapseBtn.className = 'toc-collapse-btn';
+            collapseBtn.textContent = '−';
+            collapseBtn.title = '折叠目录';
+            collapseBtn.onclick = function(e) {
+                e.stopPropagation();
+                toggleTOC();
+            };
+            
+            tocTitle.appendChild(titleText);
+            tocTitle.appendChild(collapseBtn);
+
+            const tocList = document.createElement('ul');
+            tocList.className = 'toc-list';
+
+            // 生成目录项
+            headings.forEach((heading) => {
+                const level = heading.tagName.toLowerCase();
+                const text = heading.textContent;
+                const id = heading.id;
+
+                const tocItem = document.createElement('li');
+                tocItem.className = 'toc-item';
+
+                const tocLink = document.createElement('a');
+                tocLink.className = `toc-link level-${level.charAt(1)}`;
+                tocLink.href = `#${id}`;
+                tocLink.textContent = text;
+                tocLink.onclick = function(e) {
+                    e.preventDefault();
+                    const target = document.getElementById(id);
+                    if (target) {
+                        const contentBody = document.querySelector('.content-body');
+                        const targetTop = target.offsetTop - contentBody.offsetTop - 20;
+                        contentBody.scrollTo({
+                            top: targetTop,
+                            behavior: 'smooth'
+                        });
+
+                        // 更新活动状态
+                        document.querySelectorAll('.toc-link').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        tocLink.classList.add('active');
+
+                        // 小屏幕自动关闭目录
+                        if (window.innerWidth <= 1200) {
+                            const tocContainer = document.getElementById('toc-container');
+                            if (tocContainer && !tocContainer.classList.contains('collapsed')) {
+                                toggleTOC();
+                            }
+                        }
+                    }
+                };
+
+                tocItem.appendChild(tocLink);
+                tocList.appendChild(tocItem);
+            });
+
+            tocContainer.appendChild(tocTitle);
+            tocContainer.appendChild(tocList);
+
+            // 插入到内容区域
+            contentDiv.insertBefore(tocContainer, contentDiv.firstChild);
+
+            // 创建遮罩层
+            if (!document.getElementById('toc-overlay')) {
+                const overlay = document.createElement('div');
+                overlay.id = 'toc-overlay';
+                overlay.className = 'toc-overlay';
+                document.body.appendChild(overlay);
+                setupTOCOverlay();
+            }
+
+            // 更新切换按钮
+            const tocToggle = document.getElementById('toc-toggle');
+            if (tocToggle) {
+                tocToggle.classList.remove('hidden');
+                tocToggle.textContent = '📑';
+                
+                // 大屏幕默认展开，小屏幕默认折叠
+                if (window.innerWidth > 1200) {
+                    tocContainer.classList.remove('collapsed');
+                } else {
+                    tocContainer.classList.add('collapsed');
+                }
+            }
+
+            // 监听滚动，高亮当前标题
+            const contentBody = document.querySelector('.content-body');
+            if (contentBody) {
+                contentBody.addEventListener('scroll', () => {
+                    highlightActiveTOC(headings);
+                });
+            }
+        }
+
+        // 高亮当前标题
+        function highlightActiveTOC(headings) {
+            const contentBody = document.querySelector('.content-body');
+            if (!contentBody) return;
+
+            const scrollTop = contentBody.scrollTop + 100;
+
+            let activeHeading = null;
+            headings.forEach(heading => {
+                const headingTop = heading.offsetTop - contentBody.offsetTop;
+                if (headingTop <= scrollTop) {
+                    activeHeading = heading;
+                }
+            });
+
+            if (activeHeading) {
+                document.querySelectorAll('.toc-link').forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${activeHeading.id}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        }
+
+        // 切换目录显示
+        function toggleTOC() {
+            const tocContainer = document.getElementById('toc-container');
+            const tocOverlay = document.getElementById('toc-overlay');
+            const tocToggle = document.getElementById('toc-toggle');
+            
+            if (tocContainer) {
+                const isCollapsed = tocContainer.classList.contains('collapsed');
+                
+                if (isCollapsed) {
+                    // 展开目录
+                    tocContainer.classList.remove('collapsed');
+                    if (window.innerWidth <= 1200 && tocOverlay) {
+                        tocOverlay.classList.add('show');
+                    }
+                    if (tocToggle) {
+                        tocToggle.textContent = '✕';
+                    }
+                } else {
+                    // 折叠目录
+                    tocContainer.classList.add('collapsed');
+                    if (tocOverlay) {
+                        tocOverlay.classList.remove('show');
+                    }
+                    if (tocToggle) {
+                        tocToggle.textContent = '📑';
+                    }
+                }
+            }
+        }
+
+        // 点击遮罩关闭目录
+        function setupTOCOverlay() {
+            const tocOverlay = document.getElementById('toc-overlay');
+            if (tocOverlay) {
+                tocOverlay.onclick = function() {
+                    toggleTOC();
+                };
+            }
+        }
+
+        // 修复图片路径
+        function fixImagePaths() {
+            const contentDiv = document.querySelector('.markdown-body');
+            if (!contentDiv) return;
+
+            const images = contentDiv.querySelectorAll('img');
+            images.forEach(img => {
+                const src = img.getAttribute('src');
+                if (src) {
+                    // 修复以 ./images/ 开头的路径
+                    if (src.startsWith('./images/')) {
+                        img.src = '../' + src.substring(2);
+                    }
+                    // 修复以 images/ 开头的路径
+                    else if (src.startsWith('images/')) {
+                        img.src = '../' + src;
+                    }
+                    
+                    // 添加图片加载错误处理
+                    img.onerror = function() {
+                        this.style.display = 'none';
+                        const errorMsg = document.createElement('div');
+                        errorMsg.style.cssText = 'padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px; margin: 20px 0;';
+                        errorMsg.innerHTML = `
+                            <strong>⚠️ 图片加载失败</strong><br>
+                            <span style="color: #666; font-size: 0.9em;">路径: ${src}</span>
+                        `;
+                        this.parentNode.insertBefore(errorMsg, this);
+                    };
+
+                    // 添加图片加载成功处理
+                    img.onload = function() {
+                        // 添加图片查看功能
+                        this.style.cursor = 'pointer';
+                        this.title = '点击查看大图';
+                        this.onclick = function() {
+                            showImageModal(this.src, this.alt);
+                        };
+                    };
+                }
+            });
+        }
+
+        // 显示图片模态框
+        function showImageModal(src, alt) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                cursor: pointer;
+            `;
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = alt;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 90%;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            `;
+
+            const closeBtn = document.createElement('div');
+            closeBtn.textContent = '✕';
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 30px;
+                color: white;
+                font-size: 40px;
+                font-weight: bold;
+                cursor: pointer;
+            `;
+
+            modal.appendChild(img);
+            modal.appendChild(closeBtn);
+            document.body.appendChild(modal);
+
+            // 点击关闭
+            modal.onclick = function() {
+                document.body.removeChild(modal);
+            };
+
+            // ESC键关闭
+            const escHandler = function(e) {
+                if (e.key === 'Escape') {
+                    if (document.body.contains(modal)) {
+                        document.body.removeChild(modal);
+                    }
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
+        }
+    </script>
+</body>
+</html>

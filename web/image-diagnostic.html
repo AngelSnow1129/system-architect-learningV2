@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片诊断 - 系统架构设计师学习平台</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ 图片诊断工具</h1>
+
+        <div class="info">
+            <strong>📝 说明：</strong> 这个工具会检测图片路径和加载状态。
+        </div>
+
+        <button onclick="testImages()">🔍 开始检测</button>
+        <button onclick="location.reload()">🔄 重新加载</button>
+        <button onclick="window.location.href='index.html'">🏠 返回主页</button>
+
+        <div class="test-section">
+            <h2>1. 图片目录检测</h2>
+            <div id="directory-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 图片路径测试</h2>
+            <div id="path-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 图片加载测试</h2>
+            <div id="load-test"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 路径修复建议</h2>
+            <div id="fix-suggestion"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testImages() {
+            testDirectory();
+            testPaths();
+            testLoading();
+            showFixSuggestion();
+        }
+
+        // 测试图片目录
+        async function testDirectory() {
+            const div = document.getElementById('directory-test');
+            div.innerHTML = '<p>检测中...</p>';
+
+            const testPaths = [
+                '../images/',
+                '../images/01_计算机硬件/',
+                '../images/02_操作系统知识/',
+                '../images/03_数据库系统/'
+            ];
+
+            let html = '<ul>';
+            for (const path of testPaths) {
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        html += `<li>✅ ${path} <span class="status success">存在</span></li>`;
+                    } else {
+                        html += `<li>❌ ${path} <span class="status error">不存在</span></li>`;
+                    }
+                } catch (error) {
+                    html += `<li>❌ ${path} <span class="status error">无法访问</span></li>`;
+                }
+            }
+            html += '</ul>';
+            div.innerHTML = html;
+        }
+
+        // 测试图片路径
+        function testPaths() {
+            const div = document.getElementById('path-test');
+            
+            const testCases = [
+                {
+                    original: './images/01_计算机硬件/01_计算机硬件-1.png',
+                    fixed: '../images/01_计算机硬件/01_计算机硬件-1.png',
+                    description: '相对路径（./images/）'
+                },
+                {
+                    original: 'images/01_计算机硬件/01_计算机硬件-1.png',
+                    fixed: '../images/01_计算机硬件/01_计算机硬件-1.png',
+                    description: '相对路径（images/）'
+                }
+            ];
+
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<tr style="background: #f8f9fa;"><th style="padding: 10px; text-align: left;">原始路径</th><th style="padding: 10px; text-align: left;">修复后路径</th><th style="padding: 10px; text-align: left;">说明</th></tr>';
+            
+            testCases.forEach(test => {
+                html += `
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 10px; font-family: monospace; font-size: 0.9em;">${test.original}</td>
+                        <td style="padding: 10px; font-family: monospace; font-size: 0.9em; color: #28a745;">${test.fixed}</td>
+                        <td style="padding: 10px;">${test.description}</td>
+                    </tr>
+                `;
+            });
+            html += '</table>';
+            div.innerHTML = html;
+        }
+
+        // 测试图片加载
+        async function testLoading() {
+            const div = document.getElementById('load-test');
+            div.innerHTML = '<p>测试中...</p>';
+
+            const testImages = [
+                '../images/01_计算机硬件/01_计算机硬件-1.png',
+                '../images/01_计算机硬件/01_计算机硬件-2.png',
+                '../images/02_操作系统知识/02_操作系统知识-1.png'
+            ];
+
+            let html = '';
+            for (const imgPath of testImages) {
+                html += `<div class="test-item">`;
+                html += `<strong>测试图片：</strong> ${imgPath}<br>`;
+                
+                const img = new Image();
+                const loadPromise = new Promise((resolve) => {
+                    img.onload = () => resolve(true);
+                    img.onerror = () => resolve(false);
+                    img.src = imgPath;
+                });
+
+                const loaded = await loadPromise;
+                
+                if (loaded) {
+                    html += `<span class="status success">✅ 加载成功</span><br>`;
+                    html += `<img src="${imgPath}" class="image-preview" alt="预览">`;
+                } else {
+                    html += `<span class="status error">❌ 加载失败</span>`;
+                }
+                
+                html += `</div>`;
+            }
+            
+            div.innerHTML = html;
+        }
+
+        // 显示修复建议
+        function showFixSuggestion() {
+            const div = document.getElementById('fix-suggestion');
+            
+            div.innerHTML = `
+                <div class="info">
+                    <h3>🔧 自动修复说明</h3>
+                    <p>系统已自动实现以下修复：</p>
+                    <ul>
+                        <li>✅ 自动检测图片路径</li>
+                        <li>✅ 将 <code>./images/</code> 转换为 <code>../images/</code></li>
+                        <li>✅ 将 <code>images/</code> 转换为 <code>../images/</code></li>
+                        <li>✅ 图片加载失败时显示友好提示</li>
+                        <li>✅ 图片加载成功后可点击查看大图</li>
+                    </ul>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #d4edda; border-left: 4px solid #28a745; border-radius: 5px;">
+                    <h3>✅ 使用方法</h3>
+                    <p>现在打开任意章节，图片应该可以正常显示了。</p>
+                    <p>如果图片仍然无法显示，请检查：</p>
+                    <ol>
+                        <li>images 文件夹是否在项目根目录</li>
+                        <li>图片文件是否存在</li>
+                        <li>文件名是否正确（区分大小写）</li>
+                        <li>是否使用HTTP服务器运行（推荐）</li>
+                    </ol>
+                </div>
+
+                <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+                    <h3>💡 额外功能</h3>
+                    <ul>
+                        <li>🖼️ <strong>查看大图</strong>：点击图片可以查看大图</li>
+                        <li>⚠️ <strong>错误提示</strong>：图片加载失败时会显示友好提示</li>
+                        <li>🎨 <strong>美化效果</strong>：图片自动添加圆角和阴影</li>
+                    </ul>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
