@@ -40,3 +40,6 @@ yarn-error.log*
 
 # Node modules (if any)
 node_modules/
+.kiro/
+
+
