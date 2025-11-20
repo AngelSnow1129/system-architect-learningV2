@@ -1,15 +1,6 @@
 # Cloudflare Pages Redirects Configuration
 
-# 重定向根路径到 web 目录的首页
-/index.html  /web/index.html  200
-
-# 重定向常用路径
+# 重定向常用路径的简写形式
 /chapters  /web/chapters.html  200
-/chapters.html  /web/chapters.html  200
 /nav  /web/nav.html  200
-/nav.html  /web/nav.html  200
 /viewer  /web/viewer.html  200
-/viewer.html  /web/viewer.html  200
-
-# 捕获所有其他路径，重定向到首页（SPA fallback）
-/*  /web/index.html  200
