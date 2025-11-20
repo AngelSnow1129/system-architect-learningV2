@@ -196,15 +196,274 @@ python -m http.server 8000
 
 ## 📦 部署
 
-### GitHub Pages
-1. Fork本仓库
-2. 在Settings中启用GitHub Pages
-3. 访问生成的URL
+### Cloudflare Pages（推荐）⚡
 
-### Netlify/Vercel
-1. 连接GitHub仓库
-2. 自动部署
-3. 获取访问链接
+Cloudflare Pages 提供免费、快速、全球CDN加速的静态网站托管服务。
+
+#### 方式1：通过 Git 集成（推荐）
+
+1. **准备工作**
+   - 注册 [Cloudflare 账号](https://dash.cloudflare.com/sign-up)
+   - 将项目推送到 GitHub/GitLab
+
+2. **创建 Pages 项目**
+   ```
+   登录 Cloudflare Dashboard
+   → 左侧菜单选择 "Workers & Pages"
+   → 点击 "Create application"
+   → 选择 "Pages" 标签
+   → 点击 "Connect to Git"
+   ```
+
+3. **连接仓库**
+   - 授权 Cloudflare 访问你的 Git 仓库
+   - 选择本项目仓库
+   - 点击 "Begin setup"
+
+4. **配置构建设置**
+   ```
+   Project name: 系统架构设计师学习平台（或自定义）
+   Production branch: main
+   Build command: （留空）
+   Build output directory: /
+   Root directory: /
+   ```
+
+5. **环境变量**（可选）
+   - 无需配置，本项目为纯静态网站
+
+6. **部署**
+   - 点击 "Save and Deploy"
+   - 等待部署完成（通常1-2分钟）
+   - 获得访问链接：`https://your-project.pages.dev`
+
+7. **自定义域名**（可选）
+   ```
+   进入项目设置
+   → "Custom domains"
+   → "Set up a custom domain"
+   → 输入域名并按提示配置DNS
+   ```
+
+#### 方式2：通过 Wrangler CLI
+
+1. **安装 Wrangler**
+   ```bash
+   npm install -g wrangler
+   # 或
+   yarn global add wrangler
+   ```
+
+2. **登录 Cloudflare**
+   ```bash
+   wrangler login
+   ```
+
+3. **部署项目**
+   ```bash
+   # 在项目根目录执行
+   wrangler pages deploy . --project-name=architect-learning
+   ```
+
+4. **后续更新**
+   ```bash
+   wrangler pages deploy .
+   ```
+
+#### 方式3：直接上传（最简单）
+
+1. **打包项目**
+   - 将整个项目文件夹压缩为 ZIP
+   - 或直接准备项目文件夹
+
+2. **上传部署**
+   ```
+   登录 Cloudflare Dashboard
+   → Workers & Pages
+   → Create application
+   → Pages 标签
+   → Upload assets
+   → 拖拽文件夹或选择 ZIP 文件
+   → 点击 "Deploy site"
+   ```
+
+3. **完成**
+   - 部署完成后获得访问链接
+   - 支持拖拽更新
+
+#### 配置优化建议
+
+1. **创建 `_headers` 文件**（可选）
+   ```
+   /*
+     X-Frame-Options: DENY
+     X-Content-Type-Options: nosniff
+     X-XSS-Protection: 1; mode=block
+     Referrer-Policy: strict-origin-when-cross-origin
+   
+   /*.html
+     Cache-Control: public, max-age=3600
+   
+   /*.md
+     Cache-Control: public, max-age=3600
+   
+   /*.js
+     Cache-Control: public, max-age=31536000, immutable
+   
+   /*.css
+     Cache-Control: public, max-age=31536000, immutable
+   
+   /images/*
+     Cache-Control: public, max-age=31536000, immutable
+   ```
+
+2. **创建 `_redirects` 文件**（可选）
+   ```
+   # 重定向根目录到 web 目录
+   /  /web/index.html  200
+   
+   # 404 页面
+   /* /web/index.html  404
+   ```
+
+3. **创建 `wrangler.toml` 配置**（可选）
+   ```toml
+   name = "architect-learning"
+   compatibility_date = "2024-01-01"
+   
+   [site]
+   bucket = "."
+   ```
+
+#### 部署后优化
+
+1. **性能优化**
+   - ✅ 自动全球 CDN 加速
+   - ✅ 自动 HTTPS
+   - ✅ HTTP/2 和 HTTP/3 支持
+   - ✅ 自动图片优化（可选）
+
+2. **访问分析**
+   ```
+   项目设置 → Analytics
+   查看访问量、流量、性能指标
+   ```
+
+3. **自动部署**
+   - 推送到 Git 仓库自动触发部署
+   - 支持预览部署（Pull Request）
+   - 支持回滚到历史版本
+
+#### 常见问题
+
+**Q: 部署后页面空白？**
+A: 检查 `Build output directory` 是否设置为 `/`，确保 `web/index.html` 可访问。
+
+**Q: 如何设置默认首页？**
+A: 使用 `_redirects` 文件将根路径重定向到 `/web/index.html`。
+
+**Q: 如何更新网站？**
+A: 
+- Git 集成：推送代码到仓库自动部署
+- 直接上传：重新上传文件覆盖
+- CLI：运行 `wrangler pages deploy .`
+
+**Q: 免费版有什么限制？**
+A: 
+- ✅ 无限请求
+- ✅ 无限带宽
+- ✅ 500 次构建/月
+- ✅ 100 个自定义域名
+
+**Q: 如何查看部署日志？**
+A: 项目页面 → Deployments → 点击具体部署查看详情
+
+#### 访问地址
+
+部署成功后，你的网站将可通过以下地址访问：
+- 默认域名：`https://your-project.pages.dev`
+- 自定义域名：`https://your-domain.com`（需配置）
+
+#### 推荐配置
+
+```bash
+# 项目根目录结构
+.
+├── web/              # 网站文件
+├── keypoint/         # 学习资料
+├── images/           # 图片资源
+├── _headers          # HTTP 头配置
+├── _redirects        # 重定向规则
+└── wrangler.toml     # Wrangler 配置
+```
+
+---
+
+### GitHub Pages
+
+1. **启用 GitHub Pages**
+   ```
+   仓库 Settings
+   → Pages
+   → Source: Deploy from a branch
+   → Branch: main, /root
+   → Save
+   ```
+
+2. **访问网站**
+   - `https://username.github.io/repository-name/web/`
+
+3. **自定义域名**（可选）
+   - 在 Pages 设置中添加自定义域名
+   - 配置 DNS CNAME 记录
+
+### Netlify
+
+1. **连接仓库**
+   - 登录 [Netlify](https://netlify.com)
+   - New site from Git
+   - 选择仓库
+
+2. **构建设置**
+   ```
+   Build command: （留空）
+   Publish directory: /
+   ```
+
+3. **部署**
+   - 自动部署
+   - 获取访问链接
+
+### Vercel
+
+1. **导入项目**
+   - 登录 [Vercel](https://vercel.com)
+   - Import Project
+   - 选择仓库
+
+2. **配置**
+   ```
+   Framework Preset: Other
+   Root Directory: ./
+   Output Directory: ./
+   ```
+
+3. **部署**
+   - 自动部署
+   - 获取访问链接
+
+---
+
+### 部署对比
+
+| 平台 | 速度 | CDN | 免费额度 | 推荐度 |
+|------|------|-----|----------|--------|
+| **Cloudflare Pages** | ⚡⚡⚡ | 全球 | 无限 | ⭐⭐⭐⭐⭐ |
+| GitHub Pages | ⚡⚡ | 有限 | 100GB/月 | ⭐⭐⭐⭐ |
+| Netlify | ⚡⚡⚡ | 全球 | 100GB/月 | ⭐⭐⭐⭐ |
+| Vercel | ⚡⚡⚡ | 全球 | 100GB/月 | ⭐⭐⭐⭐ |
+
+**推荐使用 Cloudflare Pages**：速度最快、无限流量、全球CDN、完全免费！
 
 ## 🤝 贡献
 

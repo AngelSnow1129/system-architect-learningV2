@@ -1,0 +1,13 @@
+# Cloudflare Pages Redirects Configuration
+
+# 重定向根目录到 web 目录
+/  /web/index.html  200
+
+# 重定向常用路径
+/chapters  /web/chapters.html  200
+/nav  /web/nav.html  200
+/viewer  /web/viewer.html  200
+/test  /web/test.html  200
+
+# 404 页面 - 重定向到首页
+/*  /web/index.html  404
