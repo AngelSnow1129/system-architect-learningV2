@@ -132,14 +132,14 @@ const CONFIG = {
                 },
                 { 
                     id: '17', 
-                    name: '补充-数学与经济管理', 
+                    name: '数学与经济管理', 
                     stars: 3,
                     hasKeypoint: true,
                     hasMustKnow: false
                 },
                 { 
                     id: '18', 
-                    name: '补充-知识产权与标准化', 
+                    name: '知识产权与标准化', 
                     stars: 3,
                     hasKeypoint: true,
                     hasMustKnow: false
