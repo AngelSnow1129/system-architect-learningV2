@@ -1065,8 +1065,221 @@
                         throw new Error('Markdown解析库未加载，请检查网络连接');
                     }
                     
-                    const html = marked.parse(loadedContent);
-                    contentDiv.innerHTML = html;
+                    // 配置 marked 选项，提高大文件解析性能
+                    marked.setOptions({
+                        breaks: true,
+                        gfm: true,
+                        headerIds: true,
+                        mangle: false,
+                        pedantic: false
+                    });
+                    
+                    // 对于大文件（>1MB），使用分块解析
+                    const fileSize = new Blob([loadedContent]).size;
+                    console.log(`文件大小: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
+                    
+                    if (fileSize > 1024 * 1024) {
+                        // 大文件：分块解析和渲染
+                        console.log('检测到大文件，使用分块解析...');
+                        contentDiv.innerHTML = '<div class="loading">正在解析大文件，请稍候...</div>';
+                        
+                        // 使用 DOMParser 分块处理
+                        setTimeout(() => {
+                            try {
+                                console.log('开始解析 markdown...');
+                                
+                                // 先解析完整内容（marked 需要完整文档才能正确处理标题层级）
+                                const html = marked.parse(loadedContent);
+                                console.log(`HTML 生成完成，长度: ${html.length} 字符`);
+                                
+                                // 检查 HTML 是否包含第20章
+                                if (html.includes('第20章')) {
+                                    console.log('✅ HTML 包含第20章内容');
+                                } else {
+                                    console.warn('⚠️ HTML 不包含第20章内容');
+                                }
+                                
+                                // 检查 HTML 是否包含13.3.4
+                                if (html.includes('13.3.4')) {
+                                    console.log('✅ HTML 包含13.3.4内容');
+                                } else {
+                                    console.warn('⚠️ HTML 不包含13.3.4内容');
+                                }
+                                
+                                // 清空内容
+                                contentDiv.innerHTML = '';
+                                
+                                // 使用 DOMParser 解析 HTML（比 innerHTML 更快）
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                
+                                // 检查解析错误
+                                const parserError = doc.querySelector('parsererror');
+                                if (parserError) {
+                                    console.error('❌ DOMParser 解析错误:', parserError.textContent);
+                                    throw new Error('HTML 解析失败');
+                                }
+                                
+                                const elements = Array.from(doc.body.children);
+                                
+                                console.log(`解析出 ${elements.length} 个元素`);
+                                console.log(`最后一个元素:`, elements[elements.length - 1]?.tagName, elements[elements.length - 1]?.textContent?.substring(0, 100));
+                                
+                                // 分批插入 DOM（每次插入 50 个元素，减少批次大小）
+                                const batchSize = 50;
+                                let currentIndex = 0;
+                                
+                                function insertBatch() {
+                                    const endIndex = Math.min(currentIndex + batchSize, elements.length);
+                                    const batch = elements.slice(currentIndex, endIndex);
+                                    
+                                    // 使用 DocumentFragment 提高性能
+                                    const fragment = document.createDocumentFragment();
+                                    batch.forEach(el => fragment.appendChild(el));
+                                    contentDiv.appendChild(fragment);
+                                    
+                                    currentIndex = endIndex;
+                                    // 修正进度计算：从 90% 到 100%
+                                    const insertProgress = (currentIndex / elements.length);
+                                    const progress = 90 + insertProgress * 10;
+                                    updateProgress(progress);
+                                    
+                                    // 每100个元素打印一次日志
+                                    if (currentIndex % 100 === 0 || currentIndex === elements.length) {
+                                        console.log(`已插入 ${currentIndex}/${elements.length} 个元素 (${(insertProgress * 100).toFixed(1)}%)`);
+                                    }
+                                    
+                                    if (currentIndex < elements.length) {
+                                        // 继续下一批
+                                        requestAnimationFrame(insertBatch);
+                                    } else {
+                                        console.log('✅ 大文件解析完成！');
+                                        console.log(`最终插入的元素数: ${contentDiv.children.length}`);
+                                        
+                                        // 验证最后的内容
+                                        const lastChild = contentDiv.lastElementChild;
+                                        if (lastChild) {
+                                            console.log(`最后一个DOM元素:`, lastChild.tagName, lastChild.textContent?.substring(0, 100));
+                                        }
+                                        
+                                        // 检查13.3.4是否存在
+                                        const content = contentDiv.textContent;
+                                        if (content.includes('13.3.4')) {
+                                            console.log('✅ DOM中包含13.3.4内容');
+                                            // 查找13.3.4的位置
+                                            const index = content.indexOf('13.3.4');
+                                            console.log(`13.3.4在文本中的位置: ${index}, 附近内容:`, content.substring(index, index + 100));
+                                        } else {
+                                            console.warn('⚠️ DOM中不包含13.3.4内容');
+                                        }
+                                        
+                                        // 检查第20章是否存在
+                                        if (content.includes('第20章')) {
+                                            console.log('✅ DOM中包含第20章内容');
+                                        } else {
+                                            console.warn('⚠️ DOM中不包含第20章内容');
+                                        }
+                                        
+                                        // 检查是否有隐藏的元素
+                                        const allElements = contentDiv.querySelectorAll('*');
+                                        let hiddenCount = 0;
+                                        allElements.forEach(el => {
+                                            const style = window.getComputedStyle(el);
+                                            if (style.display === 'none' || style.visibility === 'hidden') {
+                                                hiddenCount++;
+                                            }
+                                        });
+                                        if (hiddenCount > 0) {
+                                            console.warn(`⚠️ 发现 ${hiddenCount} 个隐藏元素`);
+                                        }
+                                        
+                                        // 检查contentDiv的实际高度
+                                        console.log(`📏 内容区域高度: ${contentDiv.scrollHeight}px, 可见高度: ${contentDiv.clientHeight}px`);
+                                        
+                                        // 查找包含13.3.4的所有元素
+                                        const elements334 = [];
+                                        contentDiv.querySelectorAll('*').forEach(el => {
+                                            if (el.textContent.includes('13.3.4')) {
+                                                elements334.push(el);
+                                            }
+                                        });
+                                        console.log(`🔍 找到 ${elements334.length} 个包含"13.3.4"的元素`);
+                                        
+                                        if (elements334.length > 0) {
+                                            const first334 = elements334[0];
+                                            console.log(`第一个13.3.4元素:`, first334.tagName, first334.textContent.substring(0, 100));
+                                            
+                                            // 检查该元素的位置和可见性
+                                            const rect = first334.getBoundingClientRect();
+                                            const style = window.getComputedStyle(first334);
+                                            console.log(`位置: top=${rect.top}, left=${rect.left}, width=${rect.width}, height=${rect.height}`);
+                                            console.log(`样式: display=${style.display}, visibility=${style.visibility}, opacity=${style.opacity}`);
+                                            
+                                            // 检查该元素在DOM中的位置
+                                            const allChildren = Array.from(contentDiv.children);
+                                            const index = allChildren.findIndex(child => child.contains(first334));
+                                            console.log(`13.3.4元素在第 ${index + 1}/${allChildren.length} 个子元素中`);
+                                            
+                                            // 查找13.3.3的位置
+                                            const elements333 = [];
+                                            contentDiv.querySelectorAll('*').forEach(el => {
+                                                if (el.textContent.includes('13.3.3')) {
+                                                    elements333.push(el);
+                                                }
+                                            });
+                                            if (elements333.length > 0) {
+                                                const first333 = elements333[0];
+                                                const index333 = allChildren.findIndex(child => child.contains(first333));
+                                                console.log(`13.3.3元素在第 ${index333 + 1}/${allChildren.length} 个子元素中`);
+                                                console.log(`13.3.3和13.3.4之间相隔 ${index - index333} 个元素`);
+                                            }
+                                        }
+                                        
+                                        finishLoading();
+                                    }
+                                }
+                                
+                                // 开始插入
+                                insertBatch();
+                                
+                            } catch (error) {
+                                console.error('❌ 分块解析失败:', error);
+                                contentDiv.innerHTML = `
+                                    <div class="error">
+                                        <h2>😕 解析失败</h2>
+                                        <p>${error.message}</p>
+                                        <p style="color: #999; font-size: 0.9em;">文件太大，建议查看分章节内容</p>
+                                        <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">重新加载</button>
+                                    </div>
+                                `;
+                                hideProgress();
+                            }
+                        }, 100);
+                        
+                        return; // 提前返回，等待异步处理完成
+                    } else {
+                        // 小文件：直接解析
+                        const html = marked.parse(loadedContent);
+                        contentDiv.innerHTML = html;
+                    }
+                    
+                    finishLoading();
+                    
+                } catch (error) {
+                    contentDiv.innerHTML = `
+                        <div class="error">
+                            <h2>😕 解析失败</h2>
+                            <p>${error.message}</p>
+                            <p style="color: #999; font-size: 0.9em;">提示：请检查网络连接，确保CDN资源可以访问</p>
+                        </div>
+                    `;
+                    hideProgress();
+                }
+            }, 100);
+            
+            // 完成加载的函数
+            function finishLoading() {
+                try {
                     titleDiv.textContent = chapter.name + (loadedCount > 1 ? ` (${loadedCount}个文件)` : '');
                     
                     // 修复图片路径
@@ -1086,16 +1299,10 @@
                     
                     hideProgress();
                 } catch (error) {
-                    contentDiv.innerHTML = `
-                        <div class="error">
-                            <h2>😕 解析失败</h2>
-                            <p>${error.message}</p>
-                            <p style="color: #999; font-size: 0.9em;">提示：请检查网络连接，确保CDN资源可以访问</p>
-                        </div>
-                    `;
+                    console.error('完成加载时出错:', error);
                     hideProgress();
                 }
-            }, 100);
+            }
 
             // 更新URL
             const url = new URL(window.location);
@@ -1437,17 +1644,28 @@
             if (!contentDiv) return;
 
             const images = contentDiv.querySelectorAll('img');
-            images.forEach(img => {
-                const src = img.getAttribute('src');
-                if (src) {
+            console.log(`🖼️ 找到 ${images.length} 个图片`);
+            
+            images.forEach((img, index) => {
+                const originalSrc = img.getAttribute('src');
+                if (originalSrc) {
+                    let newSrc = originalSrc;
+                    
                     // 修复以 ./images/ 开头的路径
-                    if (src.startsWith('./images/')) {
-                        img.src = '../' + src.substring(2);
+                    if (originalSrc.startsWith('./images/')) {
+                        newSrc = '../' + originalSrc.substring(2);
                     }
                     // 修复以 images/ 开头的路径
-                    else if (src.startsWith('images/')) {
-                        img.src = '../' + src;
+                    else if (originalSrc.startsWith('images/')) {
+                        newSrc = '../' + originalSrc;
                     }
+                    
+                    // 只在前5个图片打印日志
+                    if (index < 5) {
+                        console.log(`图片 ${index + 1}: ${originalSrc} -> ${newSrc}`);
+                    }
+                    
+                    img.src = newSrc;
                     
                     // 添加图片加载错误处理
                     img.onerror = function() {
